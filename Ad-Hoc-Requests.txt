@@ -143,9 +143,9 @@ USING(city_id))
 
 SELECT 
 	c2.city_name,
-	c.Month, 
-	C.Total_Revenue, 
-	c.contribution AS "Percentage_contribution (%)"
+	c.Month AS "highest_revenue_month", 
+	C.Total_Revenue AS "revenue", 
+	c.contribution AS "percentage_contribution (%)"
 FROM 
 	cte5 c
 JOIN 
@@ -157,10 +157,10 @@ USING (City_id);
 WITH cte AS (
 	SELECT 
 		city_name,
-		MONTHNAME(month) as Month, 
+		MONTHNAME(month) as month, 
 		repeat_passengers,
 		total_passengers, 
-		ROUND((repeat_passengers/total_passengers)*100,2) AS "monthly_repeate_passengers_rate (%)"
+		ROUND((repeat_passengers/total_passengers)*100,2) AS "monthly_repeat_passengers_rate (%)"
 	FROM 
 		fact_passenger_summary
     JOIN 
@@ -180,7 +180,7 @@ cte3 AS (
 		city_name,
 		total_repeat_passengers,
 		total_passengers, 
-        ROUND((total_repeat_passengers/total_passengers)*100,2) AS city_repeate_passengers_rate
+        ROUND((total_repeat_passengers/total_passengers)*100,2) AS city_repeat_passengers_rate
 	FROM 
 		cte2
 	JOIN 
