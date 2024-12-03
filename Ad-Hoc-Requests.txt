@@ -134,7 +134,7 @@ cte5 AS (
 
 SELECT
 	*, 
-	ROUND(((Total_Revenue-Revenue)/Total_Revenue)*100,2) As contribution 
+	ROUND((Revenue/Total_Revenue)*100,2) As contribution 
 FROM 
 	cte4
 JOIN 
