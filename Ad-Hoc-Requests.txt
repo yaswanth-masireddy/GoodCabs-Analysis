@@ -1,0 +1,196 @@
+-- City-Level Repeat Passenger Trip Frequency Report (BUSINESS REQUEST - 3)
+
+WITH cte AS (
+	SELECT * FROM dim_city c
+    JOIN dim_repeat_trip_distribution r USING (city_id)
+),
+cte2 AS(
+	SELECT
+		city_name,
+		ROUND((SUM(CASE
+			WHEN trip_count = "2-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "2-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "3-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "3-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "4-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "4-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "5-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "5-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "6-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "6-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "7-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "7-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "8-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "8-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "9-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "9-Trips",
+		ROUND((SUM(CASE
+			WHEN trip_count = "10-Trips" THEN repeat_passenger_count ELSE 0 END)*100)/SUM(repeat_passenger_count),2)
+			AS "10-Trips"
+	FROM
+		cte
+	GROUP BY
+		city_name
+)
+SELECT * FROM cte2;
+
+
+-- Identify Cities with Highest and Lowest total new Passengers (BUSINESS REQUEST - 4)
+
+WITH cte AS (
+	SELECT
+		city_name, 
+		month, 
+		SUM(new_passengers) as total_new_passengers 
+	FROM 
+		dim_city c
+	JOIN 
+		fact_passenger_summary p 
+	USING (city_id)
+	GROUP BY 
+		city_name, month),
+cte2 AS (
+	SELECT
+		city_name, 
+		SUM(total_new_passengers) AS total_new_passengers
+	FROM 
+		cte
+	GROUP BY
+		city_name),
+top_3 AS(
+	SELECT 
+		*,
+        "Top 3" AS city_category
+	FROM 
+		cte2
+	ORDER BY 
+		total_new_passengers DESC
+	LIMIT 3),
+bottom_3 AS(
+	SELECT 
+		*,
+        "Bottom 3" AS city_category
+	FROM 
+		cte2
+	ORDER BY 
+		total_new_passengers ASC
+	LIMIT 3)
+
+SELECT * FROM top_3
+UNION
+SELECT * FROM bottom_3;
+
+-- Identify Month with Highest Revenue for Each city (BUSINESS REQUEST - 5)
+
+WITH cte AS (
+	SELECT 
+		MONTHNAME(date) AS Month, 
+		city_id, 
+		SUM(fare_amount) AS Revenue
+	FROM 
+		fact_trips
+	GROUP BY 
+		city_id, Month),
+		
+cte2 AS (
+	SELECT 
+		city_id, 
+		MAX(Revenue) as Max_Revenue
+	FROM 
+		cte 
+	GROUP BY 
+		city_id),
+		
+cte3 AS (
+	SELECT 
+		city_id,
+		SUM(fare_amount) AS Total_Revenue
+	FROM 
+		fact_trips
+	GROUP BY 
+		city_id),
+		
+cte4 AS (
+	SELECT 
+		city_id, 
+		Month, 
+		Revenue 
+	FROM 
+		cte c
+	JOIN 
+		cte2 
+	USING(city_id)
+	WHERE 
+		Revenue=Max_Revenue),
+		
+cte5 AS (
+
+SELECT
+	*, 
+	ROUND(((Total_Revenue-Revenue)/Total_Revenue)*100,2) As contribution 
+FROM 
+	cte4
+JOIN 
+	cte3 
+USING(city_id))
+
+SELECT 
+	c2.city_name,
+	c.Month, 
+	C.Total_Revenue, 
+	c.contribution 
+FROM 
+	cte5 c
+JOIN 
+	(SELECT * FROM dim_city) AS c2
+USING (City_id);
+
+-- Repeat passengers rate analysis (BUSINESS REQUEST - 6)
+
+WITH cte AS (
+	SELECT 
+		city_name,
+		MONTHNAME(month) as Month, 
+		repeat_passengers,
+		total_passengers, 
+		ROUND((repeat_passengers/total_passengers)*100,2) AS "monthly_repeate_passengers_rate (%)"
+	FROM 
+		fact_passenger_summary
+    JOIN 
+		dim_city 
+	USING (city_id)),
+cte2 AS (
+	SELECT 
+		city_id,
+		SUM(repeat_passengers) as total_repeat_passengers,
+		SUM(total_passengers) as total_passengers
+	FROM 
+		fact_passenger_summary
+	GROUP BY 
+		city_id),
+cte3 AS (
+	SELECT 
+		city_name,
+		total_repeat_passengers,
+		total_passengers, 
+        ROUND((total_repeat_passengers/total_passengers)*100,2) AS city_repeate_passengers_rate
+	FROM 
+		cte2
+	JOIN 
+		dim_city 
+	USING (city_id))
+SELECT 
+	c.*, 
+	c2.city_repeate_passengers_rate AS "city_repeate_passengers_rate (%)"  
+FROM 
+	cte c
+JOIN 
+	cte3 c2 
+USING (city_name);
