@@ -145,7 +145,7 @@ SELECT
 	c2.city_name,
 	c.Month, 
 	C.Total_Revenue, 
-	c.contribution 
+	c.contribution AS "Percentage_contribution (%)"
 FROM 
 	cte5 c
 JOIN 
