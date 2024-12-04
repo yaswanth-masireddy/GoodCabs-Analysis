@@ -188,7 +188,7 @@ cte3 AS (
 	USING (city_id))
 SELECT 
 	c.*, 
-	c2.city_repeate_passengers_rate AS "city_repeate_passengers_rate (%)"  
+	c2.city_repeate_passengers_rate AS "city_repeat_passengers_rate (%)"  
 FROM 
 	cte c
 JOIN 
